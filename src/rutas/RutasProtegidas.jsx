@@ -18,7 +18,7 @@ const RutasProtegidas = ({ isAuthenticated, rolesPermitidos, permisoRequerido, c
           icon: 'error',
           title: 'Acceso Denegado',
           text: 'No tienes permisos suficientes para acceder a esta sección.',
-          confirmButtonColor: '#0d6efd'
+          confirmButtonColor: 'var(--bs-primary)'
         });
       }, 100);
       return <Navigate to='/admin' replace />
@@ -32,7 +32,7 @@ const RutasProtegidas = ({ isAuthenticated, rolesPermitidos, permisoRequerido, c
           icon: 'error',
           title: 'Acceso Denegado',
           text: 'No tienes permisos suficientes para acceder a esta sección.',
-          confirmButtonColor: '#0d6efd'
+          confirmButtonColor: 'var(--bs-primary)'
         });
       }, 100);
       return <Navigate to='/admin' replace />

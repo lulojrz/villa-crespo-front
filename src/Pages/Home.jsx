@@ -88,8 +88,8 @@ const Home = () => {
                     <div className="col-12 col-md-6">
                         <Link 
                             to="/predicacion" 
-                            className="btn w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
-                            style={{ backgroundColor: '#4b6cb7', color: 'white', borderRadius: '12px', padding: '24px 20px', border: 'none', transition: 'transform 0.2s' }}
+                            className="btn btn-primary w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
+                            style={{ borderRadius: '12px', padding: '24px 20px', transition: 'transform 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.transform = 'scale(1.02)'}
                             onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
                         >
@@ -105,8 +105,8 @@ const Home = () => {
                     <div className="col-12 col-md-6">
                         <Link 
                             to="/edificios" 
-                            className="btn w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
-                            style={{ backgroundColor: '#4b6cb7', color: 'white', borderRadius: '12px', padding: '24px 20px', border: 'none', transition: 'transform 0.2s' }}
+                            className="btn btn-primary w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
+                            style={{ borderRadius: '12px', padding: '24px 20px', transition: 'transform 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.transform = 'scale(1.02)'}
                             onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
                         >
@@ -122,8 +122,8 @@ const Home = () => {
                     <div className="col-12 col-md-6">
                         <Link 
                             to="/programa" 
-                            className="btn w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
-                            style={{ backgroundColor: '#4b6cb7', color: 'white', borderRadius: '12px', padding: '24px 20px', border: 'none', transition: 'transform 0.2s' }}
+                            className="btn btn-primary w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
+                            style={{ borderRadius: '12px', padding: '24px 20px', transition: 'transform 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.transform = 'scale(1.02)'}
                             onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
                         >
@@ -140,8 +140,8 @@ const Home = () => {
                         <div className="col-12 col-md-6">
                             <Link 
                                 to="/admin/disponibilidad" 
-                                className="btn w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
-                                style={{ backgroundColor: '#4b6cb7', color: 'white', borderRadius: '12px', padding: '24px 20px', border: 'none', transition: 'transform 0.2s' }}
+                                className="btn btn-primary w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
+                                style={{ borderRadius: '12px', padding: '24px 20px', transition: 'transform 0.2s' }}
                                 onMouseOver={e => e.currentTarget.style.transform = 'scale(1.02)'}
                                 onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
                             >
@@ -158,8 +158,8 @@ const Home = () => {
                     <div className="col-12 col-md-6">
                         <Link 
                             to="/revisitas" 
-                            className="btn w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
-                            style={{ backgroundColor: '#4b6cb7', color: 'white', borderRadius: '12px', padding: '24px 20px', border: 'none', transition: 'transform 0.2s' }}
+                            className="btn btn-primary w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
+                            style={{ borderRadius: '12px', padding: '24px 20px', transition: 'transform 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.transform = 'scale(1.02)'}
                             onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
                         >
@@ -174,8 +174,8 @@ const Home = () => {
                     {/* Botón Llamados Telefónicos — Próximamente */}
                     <div className="col-12 col-md-6">
                         <div
-                            className="btn w-100 text-start shadow-sm d-flex justify-content-between align-items-center"
-                            style={{ backgroundColor: '#6c757d', color: 'white', borderRadius: '12px', padding: '24px 20px', border: 'none', opacity: 0.65, cursor: 'default' }}
+                            className="btn bg-body-secondary text-body-secondary w-100 text-start shadow-sm d-flex justify-content-between align-items-center"
+                            style={{ borderRadius: '12px', padding: '24px 20px', opacity: 0.85, cursor: 'default' }}
                         >
                             <div className="d-flex align-items-center fw-bold fs-5">
                                 <i className="bi bi-telephone-fill me-3 fs-4"></i>
@@ -188,8 +188,8 @@ const Home = () => {
                     {/* Botón Territorios Personales — Próximamente */}
                     <div className="col-12 col-md-6">
                         <div
-                            className="btn w-100 text-start shadow-sm d-flex justify-content-between align-items-center"
-                            style={{ backgroundColor: '#6c757d', color: 'white', borderRadius: '12px', padding: '24px 20px', border: 'none', opacity: 0.65, cursor: 'default' }}
+                            className="btn bg-body-secondary text-body-secondary w-100 text-start shadow-sm d-flex justify-content-between align-items-center"
+                            style={{ borderRadius: '12px', padding: '24px 20px', opacity: 0.85, cursor: 'default' }}
                         >
                             <div className="d-flex align-items-center fw-bold fs-5">
                                 <i className="bi bi-map-fill me-3 fs-4"></i>
@@ -203,8 +203,8 @@ const Home = () => {
                     <div className="col-12 col-md-6">
                         <Link
                             to="/experiencias"
-                            className="btn w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
-                            style={{ backgroundColor: '#4b6cb7', color: 'white', borderRadius: '12px', padding: '24px 20px', border: 'none', transition: 'transform 0.2s' }}
+                            className="btn btn-primary w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
+                            style={{ borderRadius: '12px', padding: '24px 20px', transition: 'transform 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.transform = 'scale(1.02)'}
                             onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
                         >
@@ -220,8 +220,8 @@ const Home = () => {
                     <div className="col-12 col-md-6">
                         <Link
                             to="/campanas"
-                            className="btn w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
-                            style={{ backgroundColor: '#4b6cb7', color: 'white', borderRadius: '12px', padding: '24px 20px', border: 'none', transition: 'transform 0.2s' }}
+                            className="btn btn-primary w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
+                            style={{ borderRadius: '12px', padding: '24px 20px', transition: 'transform 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.transform = 'scale(1.02)'}
                             onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
                         >
@@ -237,8 +237,8 @@ const Home = () => {
                     <div className="col-12 col-md-6">
                         <Link
                             to="/admin"
-                            className="btn w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
-                            style={{ backgroundColor: '#4b6cb7', color: 'white', borderRadius: '12px', padding: '24px 20px', border: 'none', transition: 'transform 0.2s' }}
+                            className="btn btn-primary w-100 text-start shadow-sm d-flex justify-content-between align-items-center text-decoration-none"
+                            style={{ borderRadius: '12px', padding: '24px 20px', transition: 'transform 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.transform = 'scale(1.02)'}
                             onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
                         >

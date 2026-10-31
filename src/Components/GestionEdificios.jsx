@@ -128,7 +128,7 @@ const GestionEdificios = () => {
             text: "Se borrarán también todas sus manzanas y edificios.",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#dc3545',
+            confirmButtonColor: 'var(--bs-danger)',
             confirmButtonText: 'Sí, borrar'
         });
         if (result.isConfirmed) {

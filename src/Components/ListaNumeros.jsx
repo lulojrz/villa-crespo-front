@@ -89,8 +89,8 @@ const ListaNumeros = () => {
             text: `Esto marcará a los ${productosFiltrados.length} números filtrados como "No contesta". ¿Deseas continuar?`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#0d6efd',
-            cancelButtonColor: '#dc3545',
+            confirmButtonColor: 'var(--bs-primary)',
+            cancelButtonColor: 'var(--bs-danger)',
             confirmButtonText: 'Sí, reiniciar',
             cancelButtonText: 'Cancelar'
         });

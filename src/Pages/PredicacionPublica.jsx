@@ -155,7 +155,7 @@ const PredicacionPublica = () => {
                 icon: 'warning',
                 title: 'No habilitado',
                 text: 'Tu usuario aún no está habilitado para anotarse en carritos de predicación pública. Consultá con un anciano para habilitarte.',
-                confirmButtonColor: '#0d6efd'
+                confirmButtonColor: 'var(--bs-primary)'
             });
             return;
         }
@@ -168,7 +168,7 @@ const PredicacionPublica = () => {
                 showCancelButton: true,
                 confirmButtonText: 'Sí, salir',
                 cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#dc3545',
+                confirmButtonColor: 'var(--bs-danger)',
             });
             if (!confirm.isConfirmed) return;
         } else {
@@ -190,7 +190,7 @@ const PredicacionPublica = () => {
                     showCancelButton: true,
                     confirmButtonText: '<i class="bi bi-plus-circle me-1"></i> Anotarme igual',
                     cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#0d6efd',
+                    confirmButtonColor: 'var(--bs-primary)',
                 });
                 if (!confirmSolo.isConfirmed) return;
             }

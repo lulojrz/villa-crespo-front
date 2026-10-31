@@ -126,8 +126,8 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
                    <strong class="text-primary fs-5">${formatearParaMostrar(lunesCalculado)}</strong> al <strong class="text-primary fs-5">${formatearParaMostrar(domingoCalculado)}</strong>.`,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#0d6efd',
-            cancelButtonColor: '#6c757d',
+            confirmButtonColor: 'var(--bs-primary)',
+            cancelButtonColor: 'var(--bs-secondary)',
             confirmButtonText: '<i class="bi bi-calendar-check me-1"></i> Sí, generar turnos',
             cancelButtonText: 'Cancelar'
         });
@@ -147,7 +147,7 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
                     icon: 'success',
                     title: '¡Turnos Generados!',
                     text: mensaje || 'Se generaron exitosamente los turnos de la semana.',
-                    confirmButtonColor: '#0d6efd'
+                    confirmButtonColor: 'var(--bs-primary)'
                 });
                 await cargarTurnosSemana();
                 if (onTurnosGenerados) {
@@ -159,7 +159,7 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
                     icon: 'warning',
                     title: 'No se pudieron generar los turnos',
                     text: errorTexto || 'Ya existen turnos generados para esa semana o no hay plantillas activas.',
-                    confirmButtonColor: '#0d6efd'
+                    confirmButtonColor: 'var(--bs-primary)'
                 });
             }
         } catch (error) {
@@ -168,7 +168,7 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
                 icon: 'error',
                 title: 'Error de conexión',
                 text: 'No se pudo conectar con el servidor para generar los turnos.',
-                confirmButtonColor: '#0d6efd'
+                confirmButtonColor: 'var(--bs-primary)'
             });
         } finally {
             setCargando(false);
@@ -196,8 +196,8 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
                    </div>`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
+            confirmButtonColor: 'var(--bs-danger)',
+            cancelButtonColor: 'var(--bs-secondary)',
             confirmButtonText: '<i class="bi bi-trash3 me-1"></i> Sí, borrar toda la semana',
             cancelButtonText: 'Cancelar'
         });
@@ -217,7 +217,7 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
                     icon: 'success',
                     title: 'Semana borrada',
                     text: mensaje || 'Los turnos de la semana fueron eliminados. Podés volver a generarlos.',
-                    confirmButtonColor: '#0d6efd'
+                    confirmButtonColor: 'var(--bs-primary)'
                 });
                 await cargarTurnosSemana();
                 if (onTurnosGenerados) {
@@ -229,7 +229,7 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
                     icon: 'warning',
                     title: 'No se pudo borrar la semana',
                     text: errorTexto || 'No hay turnos generados para esa semana.',
-                    confirmButtonColor: '#0d6efd'
+                    confirmButtonColor: 'var(--bs-primary)'
                 });
             }
         } catch (error) {
@@ -238,7 +238,7 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
                 icon: 'error',
                 title: 'Error de conexión',
                 text: 'No se pudo conectar con el servidor.',
-                confirmButtonColor: '#0d6efd'
+                confirmButtonColor: 'var(--bs-primary)'
             });
         } finally {
             setCargandoBorrar(false);

@@ -179,8 +179,8 @@ export const NumerosProvider = ({ children }) => {
                 text: "Deseas eliminar este número? Esta acción no se puede revertir.",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#0d6efd',
-                cancelButtonColor: '#dc3545',
+                confirmButtonColor: 'var(--bs-primary)',
+                cancelButtonColor: 'var(--bs-danger)',
                 confirmButtonText: 'Sí, eliminar',
                 cancelButtonText: 'Cancelar'
             });

@@ -49,7 +49,7 @@ const CambiarContrasena = () => {
                     icon: 'success',
                     title: '¡Éxito!',
                     text: 'Tu inventario ha sido actualizado.',
-                    confirmButtonColor: '#007bff'
+                    confirmButtonColor: 'var(--bs-primary)'
                 });
             } else {
                 Swal.fire('Error', 'No se pudo actualizar el inventario.', 'error');
@@ -89,7 +89,7 @@ const CambiarContrasena = () => {
                 icon: 'error',
                 title: 'Contraseña muy corta',
                 text: 'La nueva contraseña debe tener al menos 6 caracteres.',
-                confirmButtonColor: '#007bff'
+                confirmButtonColor: 'var(--bs-primary)'
             });
             return;
         }
@@ -100,7 +100,7 @@ const CambiarContrasena = () => {
                 icon: 'error',
                 title: 'Las contraseñas no coinciden',
                 text: 'Asegúrate de escribir la misma contraseña en ambos campos nuevos.',
-                confirmButtonColor: '#007bff'
+                confirmButtonColor: 'var(--bs-primary)'
             });
             return;
         }
@@ -111,7 +111,7 @@ const CambiarContrasena = () => {
                 icon: 'error',
                 title: 'Sin cambios',
                 text: 'La nueva contraseña debe ser diferente a la actual.',
-                confirmButtonColor: '#007bff'
+                confirmButtonColor: 'var(--bs-primary)'
             });
             return;
         }
@@ -142,14 +142,14 @@ const CambiarContrasena = () => {
                         icon: 'error',
                         title: 'Error',
                         text: responseText || 'La contraseña actual es incorrecta.',
-                        confirmButtonColor: '#007bff'
+                        confirmButtonColor: 'var(--bs-primary)'
                     });
                 } else {
                     Swal.fire({
                         icon: 'success',
                         title: '¡Éxito!',
                         text: 'Tu contraseña ha sido actualizada correctamente.',
-                        confirmButtonColor: '#007bff'
+                        confirmButtonColor: 'var(--bs-primary)'
                     });
                     // Limpiar el formulario
                     setFormData({ contrasenaActual: '', nuevaContrasena: '', confirmarContrasena: '' });
@@ -161,7 +161,7 @@ const CambiarContrasena = () => {
                     icon: 'error',
                     title: 'Error',
                     text: errorMessage || 'Hubo un error al intentar cambiar la contraseña.',
-                    confirmButtonColor: '#007bff'
+                    confirmButtonColor: 'var(--bs-primary)'
                 });
             }
 

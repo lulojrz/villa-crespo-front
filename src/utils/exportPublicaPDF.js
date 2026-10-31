@@ -45,7 +45,7 @@ export const exportarInformePublicaPDF = async (apiUrl) => {
                 icon: 'info',
                 title: 'Sin publicadores habilitados',
                 text: 'No hay publicadores con habilitación para predicación pública registrados actualmente en el sistema.',
-                confirmButtonColor: '#0d6efd'
+                confirmButtonColor: 'var(--bs-primary)'
             });
             return;
         }
@@ -456,7 +456,7 @@ export const exportarInformePublicaPDF = async (apiUrl) => {
             icon: 'success',
             title: '¡Informe descargado!',
             text: `Se descargó el PDF con ${publicadoresAptos.length} hermanos habilitados y su historial de turnos.`,
-            confirmButtonColor: '#0d6efd'
+            confirmButtonColor: 'var(--bs-primary)'
         });
 
     } catch (error) {
@@ -465,7 +465,7 @@ export const exportarInformePublicaPDF = async (apiUrl) => {
             icon: 'error',
             title: 'Error al generar el informe',
             text: error.message || 'Ocurrió un problema de red o procesando los datos.',
-            confirmButtonColor: '#0d6efd'
+            confirmButtonColor: 'var(--bs-primary)'
         });
     }
 };

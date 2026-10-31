@@ -105,7 +105,7 @@ const Admin = () => {
                     <button 
                         className={`nav-link fw-bold ${tabActiva === 'telefonica' ? 'active' : 'text-body-secondary'}`} 
                         onClick={() => setTabActiva('telefonica')}
-                        style={tabActiva === 'telefonica' ? { color: '#0d6efd' } : {}}
+                        style={tabActiva === 'telefonica' ? { color: 'var(--bs-primary)' } : {}}
                     >
                         <i className="bi bi-telephone-fill me-2"></i>Predicación Telefónica
                     </button>

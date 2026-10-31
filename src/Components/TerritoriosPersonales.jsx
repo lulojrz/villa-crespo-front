@@ -285,17 +285,17 @@ const TerritoriosPersonales = () => {
                         <div className="card-body p-0">
                             <ul className="nav nav-tabs nav-fill bg-body-secondary pt-2" style={{ borderBottom: '2px solid var(--bs-border-color)' }}>
                                 <li className="nav-item">
-                                    <button className={`nav-link fw-bold ${tabActiva === 'telefonica' ? 'active text-primary' : 'text-body-secondary'}`} style={{ border: 'none', borderBottom: tabActiva === 'telefonica' ? '3px solid #0d6efd' : '3px solid transparent' }} onClick={() => setTabActiva('telefonica')}>
+                                    <button className={`nav-link fw-bold ${tabActiva === 'telefonica' ? 'active text-primary' : 'text-body-secondary'}`} style={{ border: 'none', borderBottom: tabActiva === 'telefonica' ? '3px solid var(--bs-primary)' : '3px solid transparent' }} onClick={() => setTabActiva('telefonica')}>
                                         <i className="bi bi-telephone-fill me-2"></i>Telefónica
                                     </button>
                                 </li>
                                 <li className="nav-item">
-                                    <button className={`nav-link fw-bold ${tabActiva === 'cartas' ? 'active text-primary' : 'text-body-secondary'}`} style={{ border: 'none', borderBottom: tabActiva === 'cartas' ? '3px solid #0d6efd' : '3px solid transparent' }} onClick={() => setTabActiva('cartas')}>
+                                    <button className={`nav-link fw-bold ${tabActiva === 'cartas' ? 'active text-primary' : 'text-body-secondary'}`} style={{ border: 'none', borderBottom: tabActiva === 'cartas' ? '3px solid var(--bs-primary)' : '3px solid transparent' }} onClick={() => setTabActiva('cartas')}>
                                         <i className="bi bi-envelope-paper-fill me-2"></i>Cartas
                                     </button>
                                 </li>
                                 <li className="nav-item">
-                                    <button className={`nav-link fw-bold ${tabActiva === 'publica' ? 'active text-primary' : 'text-body-secondary'}`} style={{ border: 'none', borderBottom: tabActiva === 'publica' ? '3px solid #0d6efd' : '3px solid transparent' }} onClick={() => setTabActiva('publica')}>
+                                    <button className={`nav-link fw-bold ${tabActiva === 'publica' ? 'active text-primary' : 'text-body-secondary'}`} style={{ border: 'none', borderBottom: tabActiva === 'publica' ? '3px solid var(--bs-primary)' : '3px solid transparent' }} onClick={() => setTabActiva('publica')}>
                                         <i className="bi bi-signpost-split-fill me-2"></i>Pública
                                     </button>
                                 </li>

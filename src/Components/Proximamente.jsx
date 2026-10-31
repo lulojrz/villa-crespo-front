@@ -49,7 +49,7 @@ const Proximamente = ({ modulo = 'Este módulo', icono = 'bi-hammer', color = '#
                     </div>
 
                     {/* Botón volver */}
-                    <a href="/" className="btn rounded-pill px-5 fw-semibold" style={{ backgroundColor: color, color: 'white', border: 'none' }}>
+                    <a href="/" className="btn btn-primary rounded-pill px-5 fw-semibold">
                         <i className="bi bi-house-fill me-2"></i>
                         Volver al Inicio
                     </a>

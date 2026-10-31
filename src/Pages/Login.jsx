@@ -5,7 +5,7 @@ import '../App.css'
 
 const Login = () => {
 
-  const {user, setUser, password, setPassword, errors, setErrors, handleSubmit, isLoading, isDoorOpening} = useContext(AuthContext)
+  const {user, setUser, password, setPassword, errors, handleSubmit, isLoading, isDoorOpening} = useContext(AuthContext)
 
   return (
     <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100dvh', backgroundColor: '#f4f7f6' }}>
@@ -112,9 +112,7 @@ const Login = () => {
           <button
             type="submit"
             className="btn btn-primary btn-lg w-100 fw-bold shadow-sm"
-            style={{ padding: '0.75rem', borderRadius: '0.5rem', backgroundColor: '#007bff', borderColor: '#007bff', transition: 'all 0.2s ease-in-out' }}
-            onMouseOver={(e) => { if (!isLoading) { e.target.style.backgroundColor = '#0056b3'; e.target.style.borderColor = '#0056b3'; } }}
-            onMouseOut={(e) => { if (!isLoading) { e.target.style.backgroundColor = '#007bff'; e.target.style.borderColor = '#007bff'; } }}
+            style={{ padding: '0.75rem', borderRadius: '0.5rem', transition: 'all 0.2s ease-in-out' }}
             disabled={isLoading}
           >
             {isLoading ? (

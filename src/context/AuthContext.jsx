@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }) => {
                     icon: 'error',
                     title: 'Error',
                     text: errorMessage || 'Credenciales incorrectas o error en la autenticación',
-                    confirmButtonColor: '#007bff'
+                    confirmButtonColor: 'var(--bs-primary)'
                 });
                 return;
             }
