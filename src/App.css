@@ -1,4 +1,64 @@
-﻿body {
+[data-bs-theme="light"] {
+  color-scheme: light;
+  --bs-body-bg: #faf7f2;
+  --bs-body-bg-rgb: 250, 247, 242;
+  --bs-body-color: #352a25;
+  --bs-body-color-rgb: 53, 42, 37;
+  --bs-emphasis-color: #2b211d;
+  --bs-emphasis-color-rgb: 43, 33, 29;
+  --bs-secondary-color: #75665d;
+  --bs-secondary-color-rgb: 117, 102, 93;
+  --bs-tertiary-color: #8b7b71;
+  --bs-tertiary-color-rgb: 139, 123, 113;
+  --bs-secondary-bg: #f3ece4;
+  --bs-secondary-bg-rgb: 243, 236, 228;
+  --bs-tertiary-bg: #e9ded2;
+  --bs-tertiary-bg-rgb: 233, 222, 210;
+  --bs-border-color: #dfd1c2;
+  --bs-border-color-translucent: rgba(91, 65, 50, 0.15);
+  --bs-primary: #9a4f36;
+  --bs-primary-rgb: 154, 79, 54;
+  --bs-primary-text-emphasis: #713a29;
+  --bs-primary-bg-subtle: #f4e4dc;
+  --bs-primary-border-subtle: #e1b9a6;
+  --bs-link-color: #8c472f;
+  --bs-link-color-rgb: 140, 71, 47;
+  --bs-link-hover-color: #713a29;
+  --bs-link-hover-color-rgb: 113, 58, 41;
+  --bs-focus-ring-color: rgba(154, 79, 54, 0.25);
+}
+
+[data-bs-theme="light"] .btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #9a4f36;
+  --bs-btn-border-color: #9a4f36;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #813f2b;
+  --bs-btn-hover-border-color: #793b29;
+  --bs-btn-focus-shadow-rgb: 154, 79, 54;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #713a29;
+  --bs-btn-active-border-color: #693625;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: #9a4f36;
+  --bs-btn-disabled-border-color: #9a4f36;
+}
+
+[data-bs-theme="light"] .btn-outline-primary {
+  --bs-btn-color: #8c472f;
+  --bs-btn-border-color: #a45b42;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #9a4f36;
+  --bs-btn-hover-border-color: #9a4f36;
+  --bs-btn-focus-shadow-rgb: 154, 79, 54;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #713a29;
+  --bs-btn-active-border-color: #713a29;
+  --bs-btn-disabled-color: #9a4f36;
+  --bs-btn-disabled-border-color: #9a4f36;
+}
+
+body {
     margin: 0;
     padding: 0;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;

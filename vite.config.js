@@ -38,8 +38,8 @@ export default defineConfig(({ mode }) => {
           name: 'Villa Crespo Predicación',
           short_name: 'Villa Crespo',
           description: 'Gestión y organización de la predicación - Congregación Villa Crespo',
-          theme_color: '#0d6efd',
-          background_color: '#ffffff',
+          theme_color: '#9a4f36',
+          background_color: '#faf7f2',
           display: 'standalone',
           icons: [
             {
