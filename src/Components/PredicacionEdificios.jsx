@@ -52,7 +52,6 @@ const PredicacionEdificios = () => {
     const [territorioSel, setTerritorioSel] = useState(null);
     const [manzanaSel, setManzanaSel] = useState(null);
     const [edificioSel, setEdificioSel] = useState(null);
-    const [mapaViewer, setMapaViewer] = useState(null);
 
     const api = import.meta.env.VITE_API_URL;
     const Toast = Swal.mixin({
@@ -356,8 +355,8 @@ const PredicacionEdificios = () => {
                 <div className="row g-3">
                     <div className="col-12">
                         {tActual.imagen && (
-                            <button onClick={() => setMapaViewer(tActual.imagen)} className="btn btn-outline-info w-100 bg-body shadow-sm fw-bold mb-3">
-                                <i className="bi bi-map me-2"></i> Ver Mapa del Territorio
+                            <button type="button" className="btn btn-outline-secondary w-100 bg-body shadow-sm fw-bold mb-3" disabled title="La visualización de mapas está temporalmente deshabilitada.">
+                                <i className="bi bi-map me-2"></i> Mapa en actualización
                             </button>
                         )}
                     </div>
@@ -607,16 +606,6 @@ const PredicacionEdificios = () => {
                 </div>
             )}
 
-            {mapaViewer && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <div style={{ position: 'relative', maxWidth: '95%', maxHeight: '95%' }}>
-                        <button onClick={() => setMapaViewer(null)} className="btn btn-danger position-absolute shadow" style={{ top: '-15px', right: '-15px', borderRadius: '50%', width: '40px', height: '40px', padding: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <i className="bi bi-x-lg"></i>
-                        </button>
-                        <img src={mapaViewer} alt="Mapa del Territorio" className="img-fluid rounded shadow-lg" style={{ maxHeight: '90vh', objectFit: 'contain' }} />
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

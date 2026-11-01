@@ -9,7 +9,6 @@ const TerritoriosPersonales = () => {
     const privilegio = localStorage.getItem('privilegio') || '';
     const asignacion = localStorage.getItem('asignacion') || '';
     const isAdmin = puedeAdministrarTelefonica(privilegio, asignacion);
-    const [mostrarMapa, setMostrarMapa] = useState(false);
     const [mostrarModalAyuda, setMostrarModalAyuda] = useState(false);
     const [tabActiva, setTabActiva] = useState('telefonica');
 
@@ -115,7 +114,7 @@ const TerritoriosPersonales = () => {
         const especificacion = e.target.querySelector('input[type="text"]').value;
         const mensaje = encodeURIComponent(`Hola! Me gustaria pedir un territorio personal en la zona de ${especificacion}`);
         
-        let telefono = '5491151030168'; // fallback
+        let telefono = ''; // fallback
         if (encargado && encargado.telefono) {
             telefono = encargado.telefono.replace(/\D/g, ''); // Limpiar caracteres no numéricos
         }
@@ -214,59 +213,12 @@ const TerritoriosPersonales = () => {
                     <div className="mt-2 mx-auto text-center">
                         <button 
                             className="btn btn-outline-primary mb-3 fw-semibold"
-                            onClick={() => setMostrarMapa(true)}
+                            disabled
+                            title="La visualización de mapas está temporalmente deshabilitada."
                         >
                             <i className="bi bi-map me-2"></i>
-                            Ver mapa de zonas
+                            Mapa de zonas en actualización
                         </button>
-                        
-                        {mostrarMapa && (
-                            <div style={{
-                                position: 'fixed',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: '100%',
-                                backgroundColor: 'rgba(0,0,0,0.6)',
-                                zIndex: 9999,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                padding: '1rem'
-                            }}>
-                                <div className="shadow-lg bg-body" style={{ 
-                                    width: '100%', 
-                                    maxWidth: '1200px', 
-                                    height: '90vh', 
-                                    borderRadius: '1rem', 
-                                    overflow: 'hidden', 
-                                    display: 'flex', 
-                                    flexDirection: 'column' 
-                                }}>
-                                    <div className="d-flex justify-content-between align-items-center p-3 border-bottom bg-body-tertiary">
-                                        <h5 className="m-0 fw-bold text-primary">
-                                            <i className="bi bi-geo-alt-fill me-2"></i>
-                                            Mapa de Territorios
-                                        </h5>
-                                        <button 
-                                            type="button" 
-                                            className="btn-close" 
-                                            onClick={() => setMostrarMapa(false)} 
-                                            aria-label="Cerrar"
-                                        ></button>
-                                    </div>
-                                    <div className="flex-grow-1 position-relative">
-                                        <iframe 
-                                            src="https://www.google.com/maps/d/embed?mid=1Q2YLge2FsHV1aUYzNV4fzLL8MHNwV2Y&ehbc=2E312F" 
-                                            title="Mapa de territorios"
-                                            style={{ border: 0, width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
-                                            allowFullScreen
-                                        ></iframe>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </>
             )}

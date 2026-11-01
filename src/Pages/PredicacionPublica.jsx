@@ -154,7 +154,7 @@ const PredicacionPublica = () => {
             Swal.fire({
                 icon: 'warning',
                 title: 'No habilitado',
-                text: 'Tu usuario aún no está habilitado para anotarse en carritos de predicación pública. Consultá con un anciano para habilitarte.',
+                text: 'Tu usuario aún no está habilitado para anotarse en carritos de predicación pública. Te invitamos a hablar con el comité de servicio de la congregación.',
                 confirmButtonColor: 'var(--bs-primary)'
             });
             return;
@@ -278,7 +278,7 @@ const PredicacionPublica = () => {
                             <div>
                                 <div className="fw-bold">Visualización de Turnos</div>
                                 <div className="small text-body-secondary">
-                                    Podés consultar los turnos de la congregación. Para anotarte como participante, un anciano debe habilitar previamente tu perfil en el sistema.
+                                    Podés consultar los turnos de la congregación. Para anotarte como participante, debes hablar con el comité de servicio para habilitar tu usuario.
                                 </div>
                             </div>
                         </div>

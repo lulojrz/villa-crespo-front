@@ -10,9 +10,7 @@ const GestionEdificios = () => {
     const [territorioSeleccionado, setTerritorioSeleccionado] = useState(null);
     const [manzanaSeleccionada, setManzanaSeleccionada] = useState(null);
     const [edificioSeleccionado, setEdificioSeleccionado] = useState(null);
-    
-    const [mapaViewer, setMapaViewer] = useState(null);
-    
+
     const api = import.meta.env.VITE_API_URL;
     const Toast = Swal.mixin({
         toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true
@@ -499,8 +497,8 @@ const GestionEdificios = () => {
                                     </div>
                                     <div className="col-12 col-md-6">
                                         {currentTerritorioFull.imagen && (
-                                            <button onClick={() => setMapaViewer(currentTerritorioFull.imagen)} className="btn btn-outline-info w-100 h-100 d-flex align-items-center justify-content-center border-0 shadow-sm bg-body p-3">
-                                                <i className="bi bi-image fs-4 me-2"></i> <span className="fw-semibold">Ver Mapa del Territorio</span>
+                                            <button type="button" className="btn btn-outline-secondary w-100 h-100 d-flex align-items-center justify-content-center border-0 shadow-sm bg-body p-3" disabled title="La visualización de mapas está temporalmente deshabilitada.">
+                                                <i className="bi bi-map fs-4 me-2"></i> <span className="fw-semibold">Mapa en actualización</span>
                                             </button>
                                         )}
                                     </div>
@@ -555,16 +553,6 @@ const GestionEdificios = () => {
                 </div>
             </div>
 
-            {mapaViewer && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    <div style={{ position: 'relative', maxWidth: '95%', maxHeight: '95%' }}>
-                        <button onClick={() => setMapaViewer(null)} className="btn btn-danger position-absolute shadow" style={{ top: '-15px', right: '-15px', borderRadius: '50%', width: '40px', height: '40px', padding: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <i className="bi bi-x-lg"></i>
-                        </button>
-                        <img src={mapaViewer} alt="Mapa del Territorio" className="img-fluid rounded shadow-lg" style={{ maxHeight: '90vh', objectFit: 'contain' }} />
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
