@@ -1,4 +1,4 @@
-import { useState, useContext, lazy, Suspense, useEffect } from 'react' // 1. Importamos lazy y Suspense
+import { useContext, lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import './App.css'
 
@@ -25,16 +25,6 @@ const ProgramaPredicacion = lazy(() => import('./Components/ProgramaPredicacion'
 
 function App() {
   const { numero, numeros, error, loading, setNumero, isAuthenticated } = useContext(NumerosContext)
-  
-  // Theme state
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  });
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-bs-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
 
   return (
     <>
