@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Header from '../Components/Header';
 import Swal from 'sweetalert2';
 import { puedeAdministrarPublica } from '../utils/permisos';
@@ -13,16 +13,38 @@ const formatearFecha = (d) => {
     return `${y}-${m}-${day}`;
 };
 
-const getLunes = (fecha) => {
-    const d = new Date(fecha);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
-    return d;
+const obtenerSemanasDelMes = (mesSeleccionado) => {
+    const [anio, mes] = mesSeleccionado.split('-').map(Number);
+    const primerDia = new Date(anio, mes - 1, 1);
+    primerDia.setDate(primerDia.getDate() - ((primerDia.getDay() + 6) % 7));
+
+    const ultimoDia = new Date(anio, mes, 0);
+    const semanas = [];
+    for (const lunes = new Date(primerDia); lunes <= ultimoDia; lunes.setDate(lunes.getDate() + 7)) {
+        semanas.push(formatearFecha(lunes));
+    }
+    return semanas;
 };
 
-const DIAS_LABELS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-const DIAS_FULL   = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const desplazarMes = (mesSeleccionado, cantidad) => {
+    const [anio, mes] = mesSeleccionado.split('-').map(Number);
+    const fecha = new Date(anio, mes - 1 + cantidad, 1);
+    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const construirCalendarioMensual = (mesSeleccionado) => {
+    const semanas = obtenerSemanasDelMes(mesSeleccionado);
+    return semanas.map((lunes) => {
+        const [anioSemana, mesSemana, diaSemana] = lunes.split('-').map(Number);
+        const fechaInicio = new Date(anioSemana, mesSemana - 1, diaSemana);
+        return Array.from({ length: 7 }, (_, dia) => {
+            const fecha = new Date(fechaInicio);
+            fecha.setDate(fechaInicio.getDate() + dia);
+            return fecha;
+        });
+    });
+};
+
 const API = import.meta.env.VITE_API_URL;
 
 /* ───────── componente principal ───────── */
@@ -35,10 +57,18 @@ const PredicacionPublica = () => {
 
     const [turnos,   setTurnos]   = useState([]);
     const [loading,  setLoading]  = useState(true);
-    const [semana,   setSemana]   = useState(new Date());
+    const [errorTurnos, setErrorTurnos] = useState(false);
+    const [mesSeleccionado, setMesSeleccionado] = useState(() => {
+        const hoy = new Date();
+        return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+    });
+    const solicitudMesRef = useRef(0);
 
     // pestaña activa = fecha del día seleccionado (string YYYY-MM-DD)
     const [diaActivo, setDiaActivo] = useState(formatearFecha(new Date()));
+    const semanasCalendario = construirCalendarioMensual(mesSeleccionado);
+    const nombreMes = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' })
+        .format(new Date(`${mesSeleccionado}-01T12:00:00`));
 
     // modal o botón procesando: anotarse / desanotarse
     const [accionId, setAccionId] = useState(null);
@@ -48,49 +78,84 @@ const PredicacionPublica = () => {
     const [hermanosCarrito, setHermanosCarrito] = useState([]);
     const [cargandoHermanos, setCargandoHermanos] = useState(false);
 
-    /* genera los 7 días de la semana actual */
-    const diasSemana = Array.from({ length: 7 }).map((_, i) => {
-        const d = getLunes(semana);
-        d.setDate(d.getDate() + i);
-        return d;
-    });
-
-    /* asegura que diaActivo esté dentro de la semana visible */
-    useEffect(() => {
-        const lunes   = getLunes(semana);
-        const domingo = new Date(lunes);
-        domingo.setDate(lunes.getDate() + 6);
-        const activo  = new Date(diaActivo + 'T12:00:00');
-        if (activo < lunes || activo > domingo) {
-            setDiaActivo(formatearFecha(lunes));
-        }
-    }, [semana]);
-
-    /* carga turnos de la semana */
+    /* carga las semanas que cubren el mes visible */
     const fetchTurnos = useCallback(async () => {
-        setLoading(true);
+        const solicitudActual = ++solicitudMesRef.current;
         try {
-            const lunesStr = formatearFecha(getLunes(semana));
-            const res = await fetch(`${API}/api/turnos/semana?fecha=${lunesStr}`, { credentials: 'include' });
-            if (res.ok) {
+            const semanas = obtenerSemanasDelMes(mesSeleccionado);
+            const resultados = await Promise.all(semanas.map(async (lunes) => {
+                const res = await fetch(`${API}/api/turnos/semana?fecha=${lunes}`, { credentials: 'include' });
+                if (!res.ok) {
+                    throw new Error(`No se pudieron cargar los turnos de la semana ${lunes}.`);
+                }
                 const data = await res.json();
-                setTurnos(Array.isArray(data) ? data : []);
-            } else {
-                setTurnos([]);
-            }
-        } catch (err) {
-            console.error("Error al cargar turnos de la semana:", err);
-            setTurnos([]);
-        } finally {
-            setLoading(false);
-        }
-    }, [semana]);
+                if (!Array.isArray(data)) {
+                    throw new Error(`La respuesta de turnos para la semana ${lunes} no es válida.`);
+                }
+                return data;
+            }));
 
-    useEffect(() => { 
-        fetchTurnos(); 
+            if (solicitudActual !== solicitudMesRef.current) return;
+            const turnosUnicos = new Map(resultados.flat().map(turno => [turno.id, turno]));
+            setErrorTurnos(false);
+            setTurnos([...turnosUnicos.values()]);
+        } catch (err) {
+            console.error("Error al cargar turnos del mes:", err);
+            if (solicitudActual === solicitudMesRef.current) setErrorTurnos(true);
+        } finally {
+            if (solicitudActual === solicitudMesRef.current) setLoading(false);
+        }
+    }, [mesSeleccionado]);
+
+    useEffect(() => {
+        let activo = true;
+        Promise.resolve().then(() => {
+            if (activo) fetchTurnos();
+        });
+        return () => {
+            activo = false;
+            solicitudMesRef.current += 1;
+        };
     }, [fetchTurnos]);
 
-    // WebSocket en vivo para actualizar cambios instantáneamente
+    const cambiarMes = (nuevoMes) => {
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(nuevoMes)) return;
+        const hoy = formatearFecha(new Date());
+        setLoading(true);
+        setDiaActivo(hoy.startsWith(`${nuevoMes}-`) ? hoy : `${nuevoMes}-01`);
+        setMesSeleccionado(nuevoMes);
+    };
+
+    const irAHoy = () => {
+        const hoy = new Date();
+        const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+        if (mesSeleccionado !== mesActual) setLoading(true);
+        setDiaActivo(formatearFecha(hoy));
+        setMesSeleccionado(mesActual);
+    };
+
+    const seleccionarDia = (fecha) => {
+        const fechaStr = formatearFecha(fecha);
+        const mesFecha = fechaStr.slice(0, 7);
+        if (mesFecha !== mesSeleccionado) {
+            setLoading(true);
+            setMesSeleccionado(mesFecha);
+        }
+        setDiaActivo(fechaStr);
+    };
+
+    const turnosDelDia = turnos.filter(turno => String(turno.fecha).slice(0, 10) === diaActivo);
+    const turnosDia = turnosDelDia.filter(turno => {
+        const participantes = [turno.publicador1, turno.publicador2, turno.publicador3, turno.publicador4].filter(Boolean);
+        return participantes.length < 4 || participantes.some(participante => participante.usuario === usuarioActual);
+    });
+    const contarDisponibles = (fecha) => turnos.filter(turno => {
+        if (String(turno.fecha).slice(0, 10) !== fecha) return false;
+        const participantes = [turno.publicador1, turno.publicador2, turno.publicador3, turno.publicador4].filter(Boolean);
+        return participantes.length < 4 || participantes.some(participante => participante.usuario === usuarioActual);
+    }).length;
+
+    /* WebSocket en vivo actualiza el mes visible. */
     useEffect(() => {
         let stompClient = null;
         try {
@@ -223,25 +288,8 @@ const PredicacionPublica = () => {
         }
     };
 
-    /* ── semana anterior / siguiente ── */
-    const cambiarSemana = (delta) => {
-        setSemana(prev => {
-            const d = new Date(prev);
-            d.setDate(d.getDate() + delta * 7);
-            return d;
-        });
-    };
-
-    const irAHoy = () => {
-        setSemana(new Date());
-        setDiaActivo(formatearFecha(new Date()));
-    };
-
-    /* ── filtrado por día activo ── */
-    const turnosDia = turnos.filter(t => t.fecha === diaActivo);
-
     const hoy = formatearFecha(new Date());
-    const esSemanaActual = diasSemana.some(d => formatearFecha(d) === hoy);
+    const mesActual = `${hoy.slice(0, 4)}-${hoy.slice(5, 7)}`;
 
     /* ── helper: armar enlace WhatsApp ── */
     const buildWhatsappLink = (telefono, nombre) => {
@@ -268,7 +316,7 @@ const PredicacionPublica = () => {
                             Predicación Pública
                         </h1>
                         <p className="text-body-secondary mb-0">
-                            Mirá los turnos disponibles de carritos esta semana y anotate en el que puedas participar.
+                            Elegí un día del calendario para consultar los turnos disponibles y anotarte.
                         </p>
                     </div>
 
@@ -371,103 +419,108 @@ const PredicacionPublica = () => {
                         )}
                     </div>
 
-                    {/* ── Navegación de semana ── */}
+                    {/* ── Calendario mensual ── */}
                     <div className="card border-0 shadow-sm rounded-4 mb-3 bg-body">
-                        <div className="card-body p-3">
-                            <div className="d-flex align-items-center justify-content-between gap-2">
+                        <div className="card-body p-3 p-md-4">
+                            <div className="d-flex align-items-center justify-content-between gap-2 mb-3">
                                 <button
                                     className="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                                     style={{ width: 38, height: 38 }}
-                                    onClick={() => cambiarSemana(-1)}
-                                    title="Semana anterior"
+                                    onClick={() => cambiarMes(desplazarMes(mesSeleccionado, -1))}
+                                    title="Mes anterior"
+                                    aria-label="Mes anterior"
                                 >
                                     <i className="bi bi-chevron-left"></i>
                                 </button>
 
-                                <div className="text-center">
-                                    <div className="fw-semibold text-body" style={{ fontSize: '0.95rem' }}>
-                                        {diasSemana[0].toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
-                                        &nbsp;–&nbsp;
-                                        {diasSemana[6].toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                    </div>
-                                    {!esSemanaActual && (
-                                        <button
-                                            className="btn btn-link btn-sm p-0 text-primary text-decoration-none"
-                                            onClick={irAHoy}
-                                            style={{ fontSize: '0.8rem' }}
-                                        >
-                                            Ir a esta semana
-                                        </button>
-                                    )}
+                                <div className="text-center text-capitalize fw-bold text-body fs-5">
+                                    {nombreMes}
                                 </div>
 
                                 <button
                                     className="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                                     style={{ width: 38, height: 38 }}
-                                    onClick={() => cambiarSemana(1)}
-                                    title="Semana siguiente"
+                                    onClick={() => cambiarMes(desplazarMes(mesSeleccionado, 1))}
+                                    title="Mes siguiente"
+                                    aria-label="Mes siguiente"
                                 >
                                     <i className="bi bi-chevron-right"></i>
                                 </button>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* ── Pestañas de días ── */}
-                    <div className="d-flex gap-2 mb-4 overflow-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-                        {diasSemana.map((d, i) => {
-                            const fechaStr = formatearFecha(d);
-                            const esHoy    = fechaStr === hoy;
-                            const activo   = fechaStr === diaActivo;
-                            const cantTurnos = turnos.filter(t => t.fecha === fechaStr).length;
+                            <div className="d-flex justify-content-end mb-2">
+                                {mesSeleccionado !== mesActual && (
+                                    <button
+                                        className="btn btn-link btn-sm p-0 text-primary text-decoration-none"
+                                        onClick={irAHoy}
+                                    >
+                                        Ir a este mes
+                                    </button>
+                                )}
+                            </div>
 
-                            return (
-                                <button
-                                    key={i}
-                                    onClick={() => setDiaActivo(fechaStr)}
-                                    className={`btn flex-shrink-0 rounded-3 d-flex flex-column align-items-center position-relative ${
-                                        activo
-                                            ? 'btn-primary text-white shadow-sm'
-                                            : 'btn-outline-secondary text-body-secondary bg-body'
-                                    }`}
-                                    style={{ minWidth: '68px', padding: '10px 8px', border: esHoy && !activo ? '2px solid var(--bs-primary)' : undefined }}
-                                >
-                                    <small className="fw-semibold" style={{ fontSize: '0.7rem', letterSpacing: '0.04em' }}>
-                                        {DIAS_LABELS[i]}
-                                    </small>
-                                    <span className="fw-bold" style={{ fontSize: '1.1rem', lineHeight: 1.2 }}>
-                                        {d.getDate()}
-                                    </span>
-                                    {cantTurnos > 0 && (
-                                        <span
-                                            className={`position-absolute top-0 end-0 translate-middle badge rounded-pill ${activo ? 'bg-white text-primary' : 'bg-primary text-white'}`}
-                                            style={{ fontSize: '0.65rem', padding: '3px 6px' }}
+                            <div className="d-grid gap-1" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+                                {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(dia => (
+                                    <div className="text-center text-body-secondary small fw-semibold py-1" key={dia}>
+                                        {dia}
+                                    </div>
+                                ))}
+                                {semanasCalendario.flat().map(fecha => {
+                                    const fechaStr = formatearFecha(fecha);
+                                    const esDelMes = fechaStr.startsWith(`${mesSeleccionado}-`);
+                                    const esHoy = fechaStr === hoy;
+                                    const activo = fechaStr === diaActivo;
+                                    const cantidad = contarDisponibles(fechaStr);
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={fechaStr}
+                                            onClick={() => seleccionarDia(fecha)}
+                                            aria-label={`${fecha.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}${cantidad ? `, ${cantidad} turnos disponibles` : ''}`}
+                                            aria-pressed={activo}
+                                            className={`btn rounded-3 d-flex flex-column align-items-center justify-content-center px-1 py-2 ${
+                                                activo
+                                                    ? 'btn-primary text-white shadow-sm'
+                                                    : esDelMes
+                                                        ? 'btn-outline-secondary text-body bg-body'
+                                                        : 'btn bg-body-tertiary text-body-tertiary border-0'
+                                            }`}
+                                            style={{
+                                                minHeight: '58px',
+                                                border: esHoy && !activo ? '2px solid var(--bs-primary)' : undefined
+                                            }}
                                         >
-                                            {cantTurnos}
-                                        </span>
-                                    )}
-                                    {esHoy && !activo && (
-                                        <span className="badge bg-primary rounded-pill mt-1" style={{ fontSize: '0.55rem', padding: '2px 6px' }}>Hoy</span>
-                                    )}
-                                    {esHoy && activo && (
-                                        <span className="badge bg-white text-primary rounded-pill mt-1" style={{ fontSize: '0.55rem', padding: '2px 6px' }}>Hoy</span>
-                                    )}
-                                </button>
-                            );
-                        })}
+                                            <span className="fw-semibold">{fecha.getDate()}</span>
+                                            {cantidad > 0 && (
+                                                <span className={`small ${activo ? 'text-white' : 'text-primary'}`} style={{ fontSize: '0.68rem' }}>
+                                                    {cantidad} {cantidad === 1 ? 'turno' : 'turnos'}
+                                                </span>
+                                            )}
+                                            {esHoy && <span className="small" style={{ fontSize: '0.62rem' }}>Hoy</span>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <div className="small text-body-secondary mt-2">
+                                Los números indican turnos con cupos disponibles.
+                            </div>
+                        </div>
                     </div>
 
                     {/* ── Título del día ── */}
                     <div className="d-flex align-items-center justify-content-between mb-3">
                         <h5 className="fw-bold text-body mb-0">
-                            {DIAS_FULL[diasSemana.findIndex(d => formatearFecha(d) === diaActivo)]}
-                            &nbsp;
                             <span className="text-body-secondary fw-normal" style={{ fontSize: '0.95rem' }}>
-                                {new Date(diaActivo + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'long' })}
+                                {new Date(`${diaActivo}T12:00:00`).toLocaleDateString('es-AR', {
+                                    weekday: 'long',
+                                    day: '2-digit',
+                                    month: 'long',
+                                    year: 'numeric'
+                                })}
                             </span>
                         </h5>
                         <span className="badge bg-body-tertiary text-body-secondary border rounded-pill">
-                            {turnosDia.length} {turnosDia.length === 1 ? 'turno' : 'turnos'}
+                            {turnosDia.length} {turnosDia.length === 1 ? 'disponible' : 'disponibles'}
                         </span>
                     </div>
 
@@ -478,13 +531,24 @@ const PredicacionPublica = () => {
                                 <span className="visually-hidden">Cargando...</span>
                             </div>
                         </div>
+                    ) : errorTurnos ? (
+                        <div className="alert alert-danger border-0 shadow-sm rounded-4">
+                            No se pudieron cargar los turnos del mes. Revisá tu conexión e intentá nuevamente.
+                            <button type="button" className="btn btn-sm btn-outline-danger ms-2" onClick={fetchTurnos}>
+                                Reintentar
+                            </button>
+                        </div>
                     ) : turnosDia.length === 0 ? (
                         <div className="card border-0 shadow-sm rounded-4 bg-body">
                             <div className="card-body text-center py-5">
-                                <i className="bi bi-calendar-x fs-1 text-body-tertiary mb-3 d-block"></i>
-                                <h6 className="text-body-secondary fw-semibold mb-1">Sin turnos este día</h6>
+                                <i className={`bi ${turnosDelDia.length > 0 ? 'bi-person-check' : 'bi-calendar-x'} fs-1 text-body-tertiary mb-3 d-block`}></i>
+                                <h6 className="text-body-secondary fw-semibold mb-1">
+                                    {turnosDelDia.length > 0 ? 'No quedan cupos disponibles' : 'Sin turnos este día'}
+                                </h6>
                                 <p className="text-body-tertiary small mb-0">
-                                    No hay turnos cargados para este día.<br />
+                                    {turnosDelDia.length > 0
+                                        ? 'Los turnos de este día ya están completos.'
+                                        : 'No hay turnos cargados para este día.'}<br />
                                     {esAdmin && 'Podés generarlos desde Administración → Predicación Pública → Generar turnos.'}
                                 </p>
                             </div>
