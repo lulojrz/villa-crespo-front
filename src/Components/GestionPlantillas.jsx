@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
+import GeneradorPlantillasRapidas from './GeneradorPlantillasRapidas';
 
 const GestionPlantillas = () => {
     const [plantillas, setPlantillas] = useState([]);
@@ -212,6 +213,7 @@ const GestionPlantillas = () => {
 
     return (
         <div className="container-fluid p-0 mt-4">
+            <GeneradorPlantillasRapidas puntos={puntos} usuarios={usuarios} onCreated={fetchPlantillas} />
             <div className="row g-4">
                 {/* Formulario de Creación */}
                 <div className="col-12 col-lg-4">
