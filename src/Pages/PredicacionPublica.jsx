@@ -66,6 +66,7 @@ const PredicacionPublica = () => {
 
     // pestaña activa = fecha del día seleccionado (string YYYY-MM-DD)
     const [diaActivo, setDiaActivo] = useState(formatearFecha(new Date()));
+    const [puntoActivo, setPuntoActivo] = useState(null);
     const semanasCalendario = construirCalendarioMensual(mesSeleccionado);
     const nombreMes = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' })
         .format(new Date(`${mesSeleccionado}-01T12:00:00`));
@@ -122,6 +123,7 @@ const PredicacionPublica = () => {
         if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(nuevoMes)) return;
         const hoy = formatearFecha(new Date());
         setLoading(true);
+        setPuntoActivo(null);
         setDiaActivo(hoy.startsWith(`${nuevoMes}-`) ? hoy : `${nuevoMes}-01`);
         setMesSeleccionado(nuevoMes);
     };
@@ -130,6 +132,7 @@ const PredicacionPublica = () => {
         const hoy = new Date();
         const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
         if (mesSeleccionado !== mesActual) setLoading(true);
+        setPuntoActivo(null);
         setDiaActivo(formatearFecha(hoy));
         setMesSeleccionado(mesActual);
     };
@@ -141,18 +144,46 @@ const PredicacionPublica = () => {
             setLoading(true);
             setMesSeleccionado(mesFecha);
         }
+        setPuntoActivo(null);
         setDiaActivo(fechaStr);
     };
 
     const turnosDelDia = turnos.filter(turno => String(turno.fecha).slice(0, 10) === diaActivo);
-    const turnosDia = turnosDelDia.filter(turno => {
+    const turnoTieneCupo = (turno) => {
         const participantes = [turno.publicador1, turno.publicador2, turno.publicador3, turno.publicador4].filter(Boolean);
-        return participantes.length < 4 || participantes.some(participante => participante.usuario === usuarioActual);
-    });
+        return participantes.length < 4;
+    };
+    const turnoEsPropio = (turno) => {
+        return [turno.publicador1, turno.publicador2, turno.publicador3, turno.publicador4]
+            .some(participante => participante?.usuario === usuarioActual);
+    };
+    const turnoDisponibleOPropio = (turno) => turnoTieneCupo(turno) || turnoEsPropio(turno);
+    const turnoDePunto = (turno) => String(turno.punto?.id ?? turno.punto?.nombre ?? 'sin-punto');
+    const puntosDelDia = Array.from(
+        turnosDelDia.reduce((grupos, turno) => {
+            const key = turnoDePunto(turno);
+            if (!grupos.has(key)) {
+                grupos.set(key, {
+                    key,
+                    punto: turno.punto,
+                    turnos: [],
+                    disponibles: 0,
+                    miTurno: false
+                });
+            }
+            const grupo = grupos.get(key);
+            grupo.turnos.push(turno);
+            if (turnoTieneCupo(turno)) grupo.disponibles += 1;
+            if (turnoEsPropio(turno)) grupo.miTurno = true;
+            return grupos;
+        }, new Map()).values()
+    ).sort((a, b) => (a.punto?.nombre || '').localeCompare(b.punto?.nombre || '', 'es', { sensitivity: 'base' }));
+    const turnosDia = puntoActivo
+        ? turnosDelDia.filter(turno => turnoDePunto(turno) === puntoActivo && turnoDisponibleOPropio(turno))
+        : [];
     const contarDisponibles = (fecha) => turnos.filter(turno => {
         if (String(turno.fecha).slice(0, 10) !== fecha) return false;
-        const participantes = [turno.publicador1, turno.publicador2, turno.publicador3, turno.publicador4].filter(Boolean);
-        return participantes.length < 4 || participantes.some(participante => participante.usuario === usuarioActual);
+        return turnoTieneCupo(turno);
     }).length;
 
     /* WebSocket en vivo actualiza el mes visible. */
@@ -507,25 +538,90 @@ const PredicacionPublica = () => {
                         </div>
                     </div>
 
-                    {/* ── Título del día ── */}
-                    <div className="d-flex align-items-center justify-content-between mb-3">
-                        <h5 className="fw-bold text-body mb-0">
-                            <span className="text-body-secondary fw-normal" style={{ fontSize: '0.95rem' }}>
-                                {new Date(`${diaActivo}T12:00:00`).toLocaleDateString('es-AR', {
-                                    weekday: 'long',
-                                    day: '2-digit',
-                                    month: 'long',
-                                    year: 'numeric'
+                    {/* ── Puntos del día ── */}
+                    <div className="mb-3">
+                        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
+                            <div>
+                                <h5 className="fw-bold text-body mb-1">
+                                    {new Date(`${diaActivo}T12:00:00`).toLocaleDateString('es-AR', {
+                                        weekday: 'long',
+                                        day: '2-digit',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    })}
+                                </h5>
+                                <span className="small text-body-secondary">1. Elegí un punto para ver sus turnos</span>
+                            </div>
+                            {!loading && !errorTurnos && (
+                                <span className="badge bg-body-tertiary text-body-secondary border rounded-pill align-self-start">
+                                    {puntosDelDia.length} {puntosDelDia.length === 1 ? 'punto' : 'puntos'}
+                                </span>
+                            )}
+                        </div>
+
+                        {loading ? (
+                            <div className="d-flex justify-content-center py-4">
+                                <div className="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span className="visually-hidden">Cargando puntos...</span>
+                                </div>
+                            </div>
+                        ) : errorTurnos ? (
+                            <div className="alert alert-danger border-0 shadow-sm rounded-4">
+                                No se pudieron cargar los puntos y turnos del mes. Revisá tu conexión e intentá nuevamente.
+                                <button type="button" className="btn btn-sm btn-outline-danger ms-2" onClick={fetchTurnos}>
+                                    Reintentar
+                                </button>
+                            </div>
+                        ) : puntosDelDia.length === 0 ? (
+                            <div className="card border-0 shadow-sm rounded-4 bg-body">
+                                <div className="card-body text-center py-4">
+                                    <i className="bi bi-calendar-x fs-2 text-body-tertiary mb-2 d-block"></i>
+                                    <h6 className="text-body-secondary fw-semibold mb-1">Sin turnos este día</h6>
+                                    <p className="text-body-tertiary small mb-0">
+                                        No hay puntos con turnos programados para esta fecha.
+                                        {esAdmin && ' Podés generarlos desde Administración → Predicación Pública → Generar turnos.'}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="row g-2">
+                                {puntosDelDia.map(grupo => {
+                                    const activo = grupo.key === puntoActivo;
+                                    return (
+                                        <div className="col-12 col-sm-6" key={grupo.key}>
+                                            <button
+                                                type="button"
+                                                className={`btn w-100 h-100 text-start p-3 rounded-3 ${
+                                                    activo ? 'btn-primary shadow-sm' : 'btn-outline-secondary bg-body text-body'
+                                                }`}
+                                                onClick={() => setPuntoActivo(grupo.key)}
+                                                aria-pressed={activo}
+                                            >
+                                                <span className="d-flex align-items-center justify-content-between gap-2">
+                                                    <span className="d-flex align-items-center gap-2">
+                                                        <i className="bi bi-geo-alt-fill"></i>
+                                                        <span className="fw-semibold">{grupo.punto?.nombre || 'Punto sin nombre'}</span>
+                                                    </span>
+                                                    <span className={`badge rounded-pill ${activo ? 'bg-white text-primary' : grupo.disponibles ? 'bg-primary-subtle text-primary' : 'bg-body-secondary text-body-secondary'}`}>
+                                                        {grupo.disponibles
+                                                            ? `${grupo.disponibles} ${grupo.disponibles === 1 ? 'turno disponible' : 'turnos disponibles'}`
+                                                            : grupo.miTurno ? 'Completo · anotado' : 'Completo'}
+                                                    </span>
+                                                </span>
+                                                {grupo.punto?.direccion && (
+                                                    <span className={`d-block small mt-1 ms-4 ${activo ? 'text-white-50' : 'text-body-secondary'}`}>
+                                                        {grupo.punto.direccion}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </div>
+                                    );
                                 })}
-                            </span>
-                        </h5>
-                        <span className="badge bg-body-tertiary text-body-secondary border rounded-pill">
-                            {turnosDia.length} {turnosDia.length === 1 ? 'disponible' : 'disponibles'}
-                        </span>
+                            </div>
+                        )}
                     </div>
 
-                    {/* ── Lista de turnos ── */}
-                    {loading ? (
+                    {puntoActivo && (loading ? (
                         <div className="d-flex justify-content-center py-5">
                             <div className="spinner-border text-primary" role="status">
                                 <span className="visually-hidden">Cargando...</span>
@@ -543,12 +639,12 @@ const PredicacionPublica = () => {
                             <div className="card-body text-center py-5">
                                 <i className={`bi ${turnosDelDia.length > 0 ? 'bi-person-check' : 'bi-calendar-x'} fs-1 text-body-tertiary mb-3 d-block`}></i>
                                 <h6 className="text-body-secondary fw-semibold mb-1">
-                                    {turnosDelDia.length > 0 ? 'No quedan cupos disponibles' : 'Sin turnos este día'}
+                                    {turnosDia.length === 0 && turnosDelDia.some(turno => turnoDePunto(turno) === puntoActivo)
+                                        ? 'No quedan cupos disponibles en este punto'
+                                        : 'Sin turnos disponibles en este punto'}
                                 </h6>
                                 <p className="text-body-tertiary small mb-0">
-                                    {turnosDelDia.length > 0
-                                        ? 'Los turnos de este día ya están completos.'
-                                        : 'No hay turnos cargados para este día.'}<br />
+                                    Revisá otro punto o elegí otra fecha del calendario.<br />
                                     {esAdmin && 'Podés generarlos desde Administración → Predicación Pública → Generar turnos.'}
                                 </p>
                             </div>
@@ -686,7 +782,7 @@ const PredicacionPublica = () => {
                                 );
                             })}
                         </div>
-                    )}
+                    ))}
 
                     {/* ── Acceso rápido admin ── */}
                     {esAdmin && (
