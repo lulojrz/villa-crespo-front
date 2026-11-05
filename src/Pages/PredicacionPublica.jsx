@@ -74,10 +74,9 @@ const PredicacionPublica = () => {
     // modal o botón procesando: anotarse / desanotarse
     const [accionId, setAccionId] = useState(null);
 
-    // Panel hermanos con carrito/banner
-    const [mostrarHermanosPanel, setMostrarHermanosPanel] = useState(false);
     const [hermanosCarrito, setHermanosCarrito] = useState([]);
     const [cargandoHermanos, setCargandoHermanos] = useState(false);
+    const [errorHermanos, setErrorHermanos] = useState(false);
 
     /* carga las semanas que cubren el mes visible */
     const fetchTurnos = useCallback(async () => {
@@ -216,26 +215,32 @@ const PredicacionPublica = () => {
     const cargarHermanos = useCallback(async () => {
         if (hermanosCarrito.length > 0) return; // ya cargados
         setCargandoHermanos(true);
+        setErrorHermanos(false);
         try {
             const res = await fetch(`${API}/usuarios`, { credentials: 'include' });
-            if (res.ok) {
-                const data = await res.json();
-                const filtrados = (Array.isArray(data) ? data : []).filter(u => u.carrito || u.banner);
-                setHermanosCarrito(filtrados);
+            if (!res.ok) {
+                throw new Error('No se pudo cargar la lista de hermanos.');
             }
+            const data = await res.json();
+            const filtrados = (Array.isArray(data) ? data : []).filter(u => u.carrito || u.banner);
+            setHermanosCarrito(filtrados);
         } catch (err) {
             console.error("Error al cargar hermanos con carrito/banner:", err);
+            setErrorHermanos(true);
         } finally {
             setCargandoHermanos(false);
         }
     }, [hermanosCarrito.length]);
 
-    const toggleHermanosPanel = () => {
-        if (!mostrarHermanosPanel) {
-            cargarHermanos();
-        }
-        setMostrarHermanosPanel(prev => !prev);
-    };
+    useEffect(() => {
+        let activo = true;
+        Promise.resolve().then(() => {
+            if (activo) cargarHermanos();
+        });
+        return () => {
+            activo = false;
+        };
+    }, [cargarHermanos]);
 
     /* ── acciones de anotarse / desanotarse ── */
     const toggleAnotarse = async (turno, esSalida = false) => {
@@ -351,105 +356,6 @@ const PredicacionPublica = () => {
                         </p>
                     </div>
 
-                    {!estaHabilitado && (
-                        <div className="alert alert-warning border-0 shadow-sm rounded-4 mb-4 p-3 d-flex align-items-center gap-3">
-                            <i className="bi bi-info-circle-fill text-warning fs-3"></i>
-                            <div>
-                                <div className="fw-bold">Visualización de Turnos</div>
-                                <div className="small text-body-secondary">
-                                    Podés consultar los turnos de la congregación. Para anotarte como participante, debes hablar con el comité de servicio para habilitar tu usuario.
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── Panel: Hermanos con carrito o banner ── */}
-                    <div className="card border-0 shadow-sm rounded-4 mb-4 bg-body">
-                        <div
-                            className="card-header bg-transparent border-0 d-flex align-items-center justify-content-between py-3 px-4"
-                            style={{ cursor: 'pointer' }}
-                            onClick={toggleHermanosPanel}
-                            role="button"
-                            aria-expanded={mostrarHermanosPanel}
-                        >
-                            <div className="d-flex align-items-center gap-2">
-                                <span className="fs-5">🛒</span>
-                                <span className="fw-semibold text-body">Hermanos con carrito o banner</span>
-                                <span className="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" style={{ fontSize: '0.72rem' }}>
-                                    Contacto directo
-                                </span>
-                            </div>
-                            <i className={`bi bi-chevron-${mostrarHermanosPanel ? 'up' : 'down'} text-body-secondary`}></i>
-                        </div>
-
-                        {mostrarHermanosPanel && (
-                            <div className="card-body pt-0 px-4 pb-4">
-                                <p className="text-body-secondary small mb-3">
-                                    Si necesitás compañero/a para un turno, podés contactar directamente a los hermanos que tienen carrito o banner propio.
-                                    <strong className="text-danger ms-1">Nunca vayas solo/a a predicar.</strong>
-                                </p>
-
-                                {cargandoHermanos ? (
-                                    <div className="text-center py-3 text-muted small">
-                                        <span className="spinner-border spinner-border-sm me-2"></span>
-                                        Cargando hermanos...
-                                    </div>
-                                ) : hermanosCarrito.length === 0 ? (
-                                    <div className="text-center py-3 text-body-secondary small">
-                                        <i className="bi bi-person-slash fs-4 d-block mb-2 text-body-tertiary"></i>
-                                        No se encontraron hermanos con carrito o banner registrado.
-                                    </div>
-                                ) : (
-                                    <div className="row g-2">
-                                        {hermanosCarrito.map(h => {
-                                            const nombre = [h.nombre, h.apellido].filter(Boolean).join(' ') || h.usuario;
-                                            const wppLink = buildWhatsappLink(h.telefono, nombre);
-                                            return (
-                                                <div key={h.id || h.usuario} className="col-12 col-sm-6 col-md-4">
-                                                    <div className="d-flex align-items-center gap-2 p-2 rounded-3 border bg-body-tertiary">
-                                                        <div className="flex-shrink-0 rounded-circle bg-primary-subtle d-flex align-items-center justify-content-center"
-                                                             style={{ width: 36, height: 36 }}>
-                                                            <i className="bi bi-person-fill text-primary" style={{ fontSize: '1rem' }}></i>
-                                                        </div>
-                                                        <div className="flex-grow-1 overflow-hidden">
-                                                            <div className="fw-semibold text-body small text-truncate">{nombre}</div>
-                                                            <div className="d-flex gap-1 mt-1 flex-wrap">
-                                                                {h.carrito && (
-                                                                    <span className="badge bg-info-subtle text-info border border-info-subtle" style={{ fontSize: '0.65rem' }}>
-                                                                        🛒 Carrito
-                                                                    </span>
-                                                                )}
-                                                                {h.banner && (
-                                                                    <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style={{ fontSize: '0.65rem' }}>
-                                                                        🏳️ Banner
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        {wppLink ? (
-                                                            <a
-                                                                href={wppLink}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="btn btn-sm btn-success rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                                                style={{ width: 34, height: 34 }}
-                                                                title={`Escribirle a ${nombre} por WhatsApp`}
-                                                            >
-                                                                <i className="bi bi-whatsapp" style={{ fontSize: '1rem' }}></i>
-                                                            </a>
-                                                        ) : (
-                                                            <span className="text-body-tertiary small" style={{ fontSize: '0.7rem' }}>Sin tel.</span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
                     {/* ── Calendario mensual ── */}
                     <div className="card border-0 shadow-sm rounded-4 mb-3 bg-body">
                         <div className="card-body p-3 p-md-4">
@@ -537,6 +443,18 @@ const PredicacionPublica = () => {
                             </div>
                         </div>
                     </div>
+
+                    {!estaHabilitado && (
+                        <div className="alert alert-warning border-0 shadow-sm rounded-4 mb-4 p-3 d-flex align-items-center gap-3">
+                            <i className="bi bi-info-circle-fill text-warning fs-3"></i>
+                            <div>
+                                <div className="fw-bold">Visualización de Turnos</div>
+                                <div className="small text-body-secondary">
+                                    Podés consultar los turnos de la congregación. Para anotarte como participante, debes hablar con el comité de servicio para habilitar tu usuario.
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* ── Puntos del día ── */}
                     <div className="mb-3">
@@ -783,6 +701,93 @@ const PredicacionPublica = () => {
                             })}
                         </div>
                     ))}
+
+                    {/* ── Hermanos con carrito o banner ── */}
+                    <section className="card border-0 shadow-sm rounded-4 mt-4 bg-body" aria-labelledby="hermanos-carrito-titulo">
+                        <div className="card-header bg-transparent border-0 py-3 px-4">
+                            <div className="d-flex align-items-center gap-2">
+                                <span className="fs-5">🛒</span>
+                                <h2 id="hermanos-carrito-titulo" className="fw-semibold text-body fs-6 mb-0">
+                                    Hermanos con carrito o banner
+                                </h2>
+                                <span className="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" style={{ fontSize: '0.72rem' }}>
+                                    Contacto directo
+                                </span>
+                            </div>
+                        </div>
+                        <div className="card-body pt-0 px-4 pb-4">
+                            <p className="text-body-secondary small mb-3">
+                                Si necesitás compañero/a para un turno, podés contactar directamente a los hermanos que tienen carrito o banner propio.
+                                <strong className="text-danger ms-1">Nunca vayas solo/a a predicar.</strong>
+                            </p>
+
+                            {cargandoHermanos ? (
+                                <div className="text-center py-3 text-muted small" role="status">
+                                    <span className="spinner-border spinner-border-sm me-2"></span>
+                                    Cargando hermanos...
+                                </div>
+                            ) : errorHermanos ? (
+                                <div className="alert alert-danger d-flex justify-content-between align-items-center gap-2 mb-0">
+                                    <span className="small">No se pudo cargar la lista de hermanos.</span>
+                                    <button type="button" className="btn btn-sm btn-outline-danger flex-shrink-0" onClick={cargarHermanos}>
+                                        Reintentar
+                                    </button>
+                                </div>
+                            ) : hermanosCarrito.length === 0 ? (
+                                <div className="text-center py-3 text-body-secondary small">
+                                    <i className="bi bi-person-slash fs-4 d-block mb-2 text-body-tertiary"></i>
+                                    No se encontraron hermanos con carrito o banner registrado.
+                                </div>
+                            ) : (
+                                <div className="row g-2">
+                                    {hermanosCarrito.map(h => {
+                                        const nombre = [h.nombre, h.apellido].filter(Boolean).join(' ') || h.usuario;
+                                        const wppLink = buildWhatsappLink(h.telefono, nombre);
+                                        return (
+                                            <div key={h.id || h.usuario} className="col-12 col-sm-6 col-md-4">
+                                                <div className="d-flex align-items-center gap-2 p-2 rounded-3 border bg-body-tertiary h-100">
+                                                    <div className="flex-shrink-0 rounded-circle bg-primary-subtle d-flex align-items-center justify-content-center"
+                                                         style={{ width: 36, height: 36 }}>
+                                                        <i className="bi bi-person-fill text-primary" style={{ fontSize: '1rem' }}></i>
+                                                    </div>
+                                                    <div className="flex-grow-1 overflow-hidden">
+                                                        <div className="fw-semibold text-body small text-truncate">{nombre}</div>
+                                                        <div className="d-flex gap-1 mt-1 flex-wrap">
+                                                            {h.carrito && (
+                                                                <span className="badge bg-info-subtle text-info border border-info-subtle" style={{ fontSize: '0.65rem' }}>
+                                                                    🛒 Carrito
+                                                                </span>
+                                                            )}
+                                                            {h.banner && (
+                                                                <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style={{ fontSize: '0.65rem' }}>
+                                                                    🏳️ Banner
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {wppLink ? (
+                                                        <a
+                                                            href={wppLink}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="btn btn-sm btn-success rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                                            style={{ width: 34, height: 34 }}
+                                                            title={`Escribirle a ${nombre} por WhatsApp`}
+                                                            aria-label={`Escribirle a ${nombre} por WhatsApp`}
+                                                        >
+                                                            <i className="bi bi-whatsapp" style={{ fontSize: '1rem' }}></i>
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-body-tertiary small" style={{ fontSize: '0.7rem' }}>Sin tel.</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </section>
 
                     {/* ── Acceso rápido admin ── */}
                     {esAdmin && (
