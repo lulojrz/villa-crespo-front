@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useContext } from 'react';
 import Header from '../Components/Header';
 import Swal from 'sweetalert2';
 import { puedeAdministrarPublica } from '../utils/permisos';
+import { NumerosContext } from '../context/NumerosContext';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 
@@ -49,6 +50,8 @@ const API = import.meta.env.VITE_API_URL;
 
 /* ───────── componente principal ───────── */
 const PredicacionPublica = () => {
+    const { authFetch } = useContext(NumerosContext);
+
     const usuarioActual = localStorage.getItem('usuario');
     const privilegio    = localStorage.getItem('privilegio') || '';
     const asignacion    = localStorage.getItem('asignacion') || '';
@@ -64,14 +67,12 @@ const PredicacionPublica = () => {
     });
     const solicitudMesRef = useRef(0);
 
-    // pestaña activa = fecha del día seleccionado (string YYYY-MM-DD)
     const [diaActivo, setDiaActivo] = useState(formatearFecha(new Date()));
     const [puntoActivo, setPuntoActivo] = useState(null);
     const semanasCalendario = construirCalendarioMensual(mesSeleccionado);
     const nombreMes = new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' })
         .format(new Date(`${mesSeleccionado}-01T12:00:00`));
 
-    // modal o botón procesando: anotarse / desanotarse
     const [accionId, setAccionId] = useState(null);
 
     const [hermanosCarrito, setHermanosCarrito] = useState([]);
@@ -84,10 +85,7 @@ const PredicacionPublica = () => {
         try {
             const semanas = obtenerSemanasDelMes(mesSeleccionado);
             const resultados = await Promise.all(semanas.map(async (lunes) => {
-                const res = await fetch(`${API}/api/turnos/semana?fecha=${lunes}`, { credentials: 'include' });
-                if (!res.ok) {
-                    throw new Error(`No se pudieron cargar los turnos de la semana ${lunes}.`);
-                }
+                const res = await authFetch(`${API}/api/turnos/semana?fecha=${lunes}`);
                 const data = await res.json();
                 if (!Array.isArray(data)) {
                     throw new Error(`La respuesta de turnos para la semana ${lunes} no es válida.`);
@@ -105,7 +103,7 @@ const PredicacionPublica = () => {
         } finally {
             if (solicitudActual === solicitudMesRef.current) setLoading(false);
         }
-    }, [mesSeleccionado]);
+    }, [mesSeleccionado, authFetch]);
 
     useEffect(() => {
         let activo = true;
@@ -185,13 +183,15 @@ const PredicacionPublica = () => {
         return turnoTieneCupo(turno);
     }).length;
 
-    /* WebSocket en vivo actualiza el mes visible. */
+    /* WebSocket en vivo actualiza el mes visible */
     useEffect(() => {
         let stompClient = null;
         try {
+            const token = localStorage.getItem('token');
             const socket = new SockJS(`${API}/ws-turnos`);
             stompClient = new Client({
                 webSocketFactory: () => socket,
+                connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
                 reconnectDelay: 5000,
                 onConnect: () => {
                     stompClient.subscribe('/topic/turnos', () => {
@@ -213,14 +213,11 @@ const PredicacionPublica = () => {
 
     /* ── cargar hermanos con carrito o banner ── */
     const cargarHermanos = useCallback(async () => {
-        if (hermanosCarrito.length > 0) return; // ya cargados
+        if (hermanosCarrito.length > 0) return;
         setCargandoHermanos(true);
         setErrorHermanos(false);
         try {
-            const res = await fetch(`${API}/usuarios`, { credentials: 'include' });
-            if (!res.ok) {
-                throw new Error('No se pudo cargar la lista de hermanos.');
-            }
+            const res = await authFetch(`${API}/usuarios`);
             const data = await res.json();
             const filtrados = (Array.isArray(data) ? data : []).filter(u => u.carrito || u.banner);
             setHermanosCarrito(filtrados);
@@ -230,7 +227,7 @@ const PredicacionPublica = () => {
         } finally {
             setCargandoHermanos(false);
         }
-    }, [hermanosCarrito.length]);
+    }, [hermanosCarrito.length, authFetch]);
 
     useEffect(() => {
         let activo = true;
@@ -273,10 +270,8 @@ const PredicacionPublica = () => {
             });
             if (!confirm.isConfirmed) return;
         } else {
-            // Calcular participantes actuales para mostrar mensaje si es el primero
             const participantes = [turno.publicador1, turno.publicador2, turno.publicador3, turno.publicador4].filter(Boolean);
             if (participantes.length === 0) {
-                // El usuario sería el primero en anotarse → advertencia
                 const confirmSolo = await Swal.fire({
                     title: '¡Recordá ir acompañado!',
                     html: `<div class="text-start">
@@ -299,17 +294,19 @@ const PredicacionPublica = () => {
 
         setAccionId(turnoId);
         try {
-            const res = await fetch(`${API}/api/turnos/anotarse/${turnoId}?usuario=${encodeURIComponent(usuarioActual)}`, {
+            // Uso directo de fetch para leer mensajes de error 400 del backend (ej. turno lleno)
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API}/api/turnos/anotarse/${turnoId}`, {
                 method: 'PUT',
-                credentials: 'include',
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
 
             if (res.ok) {
-                Swal.fire({ 
-                    icon: 'success', 
-                    title: esSalida ? 'Saliste del turno' : '¡Te anotaste con éxito!', 
-                    timer: 1500, 
-                    showConfirmButton: false 
+                Swal.fire({
+                    icon: 'success',
+                    title: esSalida ? 'Saliste del turno' : '¡Te anotaste con éxito!',
+                    timer: 1500,
+                    showConfirmButton: false
                 });
                 fetchTurnos();
             } else {
@@ -327,7 +324,6 @@ const PredicacionPublica = () => {
     const hoy = formatearFecha(new Date());
     const mesActual = `${hoy.slice(0, 4)}-${hoy.slice(5, 7)}`;
 
-    /* ── helper: armar enlace WhatsApp ── */
     const buildWhatsappLink = (telefono, nombre) => {
         if (!telefono) return null;
         const numLimpio = telefono.replace(/\D/g, '');
@@ -582,7 +578,6 @@ const PredicacionPublica = () => {
                                         style={miTurno ? { borderLeftColor: '#0d6efd !important' } : {}}
                                     >
                                         <div className="card-body p-4">
-                                            {/* Fila superior: punto + horario */}
                                             <div className="d-flex align-items-start justify-content-between gap-3 mb-3">
                                                 <div>
                                                     <div className="d-flex align-items-center gap-2 mb-1">
@@ -610,7 +605,6 @@ const PredicacionPublica = () => {
                                                     )}
                                                 </div>
 
-                                                {/* Horario */}
                                                 <div className="text-end flex-shrink-0">
                                                     <div className="fw-bold text-primary" style={{ fontSize: '1.15rem' }}>
                                                         {turno.horaInicio?.slice(0, 5)}
@@ -621,7 +615,6 @@ const PredicacionPublica = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Aviso cupos: recomendación */}
                                             {participantes.length === 1 && (
                                                 <div className="alert alert-warning border-0 rounded-3 py-2 px-3 mb-3 d-flex align-items-center gap-2 small">
                                                     <i className="bi bi-exclamation-triangle-fill text-warning flex-shrink-0"></i>
@@ -632,10 +625,8 @@ const PredicacionPublica = () => {
                                                 </div>
                                             )}
 
-                                            {/* Participantes */}
                                             <div className="d-flex align-items-center justify-content-between gap-3">
                                                 <div className="d-flex align-items-center gap-2 flex-wrap">
-                                                    {/* Cupos */}
                                                     <span className={`badge rounded-pill ${
                                                         lleno
                                                             ? 'bg-danger bg-opacity-10 text-danger border border-danger'
@@ -647,7 +638,6 @@ const PredicacionPublica = () => {
                                                         {participantes.length}/4 cupos
                                                     </span>
 
-                                                    {/* Nombres de participantes */}
                                                     {participantes.length > 0 && (
                                                         <div className="d-flex align-items-center gap-1 flex-wrap">
                                                             {participantes.map((p, idx) => (
@@ -665,7 +655,6 @@ const PredicacionPublica = () => {
                                                     )}
                                                 </div>
 
-                                                {/* Botón de acción */}
                                                 <div className="flex-shrink-0">
                                                     {miTurno ? (
                                                         <button

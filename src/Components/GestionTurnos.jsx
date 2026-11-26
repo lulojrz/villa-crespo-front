@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
+import { NumerosContext } from '../context/NumerosContext';
 
 const hoy = () => {
     const fecha = new Date();
@@ -11,6 +12,8 @@ const hoy = () => {
 
 const GestionTurnos = () => {
     const api = import.meta.env.VITE_API_URL;
+    const { authFetch } = useContext(NumerosContext);
+
     const [puntos, setPuntos] = useState([]);
     const [cargandoPuntos, setCargandoPuntos] = useState(true);
     const [guardando, setGuardando] = useState(false);
@@ -25,13 +28,7 @@ const GestionTurnos = () => {
     useEffect(() => {
         const cargarPuntos = async () => {
             try {
-                const response = await fetch(`${api}/api/turnos/puntos`, {
-                    credentials: 'include'
-                });
-                if (!response.ok) {
-                    throw new Error('No se pudieron cargar los puntos de predicación.');
-                }
-
+                const response = await authFetch(`${api}/api/turnos/puntos`);
                 const data = await response.json();
                 setPuntos(data.filter(punto => punto.activo !== false));
             } catch (error) {
@@ -43,7 +40,7 @@ const GestionTurnos = () => {
         };
 
         cargarPuntos();
-    }, [api]);
+    }, [api, authFetch]);
 
     const handleChange = (event) => {
         const { name, value } = event.target;
@@ -60,10 +57,13 @@ const GestionTurnos = () => {
 
         setGuardando(true);
         try {
+            const token = localStorage.getItem('token');
             const response = await fetch(`${api}/turnos`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                },
                 body: JSON.stringify({
                     fecha: nuevoTurno.fecha,
                     horaInicio: `${nuevoTurno.horaInicio}:00`,
@@ -72,6 +72,17 @@ const GestionTurnos = () => {
                     punto: { id: Number(nuevoTurno.puntoId) }
                 })
             });
+
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('isAuth');
+                window.location.href = '/login';
+                return;
+            }
+
+            if (response.status === 403) {
+                throw new Error('No tenés permisos para crear turnos.');
+            }
 
             if (!response.ok) {
                 const mensaje = await response.text();
