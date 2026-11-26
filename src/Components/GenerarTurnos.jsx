@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
+import { NumerosContext } from '../context/NumerosContext';
 
 const formatearFecha = (fecha) => {
     const [anio, mes, dia] = fecha.split('-');
@@ -44,6 +45,7 @@ const desplazarMes = (mesSeleccionado, cantidad) => {
 
 const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
     const api = import.meta.env.VITE_API_URL;
+    const { authFetch } = useContext(NumerosContext);
     const hoy = new Date();
     const [mesSeleccionado, setMesSeleccionado] = useState(
         `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`
@@ -68,15 +70,7 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
         const solicitudId = ++solicitudMesRef.current;
         const resultados = await Promise.all(semanasDelMes.map(async (lunes) => {
             try {
-                const response = await fetch(
-                    `${api}/api/turnos/semana?fecha=${lunes}`,
-                    { credentials: 'include' }
-                );
-                if (!response.ok) {
-                    const mensaje = await response.text();
-                    throw new Error(mensaje || `No se pudieron cargar los turnos de la semana del ${formatearFecha(lunes)}.`);
-                }
-
+                const response = await authFetch(`${api}/api/turnos/semana?fecha=${lunes}`);
                 const data = await response.json();
                 if (!Array.isArray(data)) {
                     throw new Error(`La respuesta de turnos para la semana del ${formatearFecha(lunes)} no es válida.`);
@@ -91,7 +85,7 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
         if (solicitudId !== solicitudMesRef.current) return;
         setTurnosPorSemana(Object.fromEntries(resultados));
         setCargandoMes(false);
-    }, [api, semanasDelMes]);
+    }, [api, authFetch, semanasDelMes]);
 
     useEffect(() => {
         cargarTurnosMes();
@@ -104,11 +98,7 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
         let activo = true;
         const consultarPlantillas = async () => {
             try {
-                const response = await fetch(`${api}/api/turnos/obtener`, { credentials: 'include' });
-                if (!response.ok) {
-                    const mensaje = await response.text();
-                    throw new Error(mensaje || 'No se pudieron consultar las plantillas.');
-                }
+                const response = await authFetch(`${api}/api/turnos/obtener`);
                 const data = await response.json();
                 if (activo) setCantidadPlantillas(Array.isArray(data) ? data.length : 0);
             } catch (error) {
@@ -122,7 +112,7 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
         return () => {
             activo = false;
         };
-    }, [api]);
+    }, [api, authFetch]);
 
     const generarSemana = async (lunes) => {
         const fechas = obtenerFechasSemana(lunes);
@@ -149,10 +139,19 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
 
         setSemanaEnProceso(lunes);
         try {
+            const token = localStorage.getItem('token');
             const response = await fetch(`${api}/api/turnos/generar?lunes=${lunes}`, {
                 method: 'POST',
-                credentials: 'include'
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
+
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('isAuth');
+                window.location.href = '/login';
+                return;
+            }
+
             if (!response.ok) {
                 const mensaje = await response.text();
                 await Swal.fire({
@@ -209,10 +208,19 @@ const GenerarTurnos = ({ onTurnosGenerados, onIrAPlantillas }) => {
 
         setSemanaBorrando(lunes);
         try {
+            const token = localStorage.getItem('token');
             const response = await fetch(`${api}/api/turnos/semana?fecha=${lunes}`, {
                 method: 'DELETE',
-                credentials: 'include'
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
+
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('isAuth');
+                window.location.href = '/login';
+                return;
+            }
+
             if (!response.ok) {
                 const mensaje = await response.text();
                 await Swal.fire({

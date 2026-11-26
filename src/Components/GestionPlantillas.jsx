@@ -1,8 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useContext, useCallback } from 'react';
 import Swal from 'sweetalert2';
+import { NumerosContext } from '../context/NumerosContext';
 import GeneradorPlantillasRapidas from './GeneradorPlantillasRapidas';
 
 const GestionPlantillas = () => {
+    const { authFetch } = useContext(NumerosContext);
+
     const [plantillas, setPlantillas] = useState([]);
     const [puntos, setPuntos] = useState([]);
     const [usuarios, setUsuarios] = useState([]);
@@ -17,7 +20,7 @@ const GestionPlantillas = () => {
         publicador1: { id: '' },
         publicador2: { id: '' }
     });
-    
+
     const api = import.meta.env.VITE_API_URL;
 
     const diasSemana = [
@@ -30,58 +33,45 @@ const GestionPlantillas = () => {
         { value: 'SUNDAY', label: 'Domingo' }
     ];
 
-    const fetchPuntos = async () => {
+    const fetchPuntos = useCallback(async () => {
         try {
-            const response = await fetch(`${api}/api/turnos/puntos`, {
-                credentials: 'include'
-            });
-            if (response.ok) {
-                const data = await response.json();
-                // Solo cargar puntos activos si es posible, o todos
-                setPuntos(data.filter(p => p.activo !== false)); // if activo doesn't exist, show it.
-            }
+            const response = await authFetch(`${api}/api/turnos/puntos`);
+            const data = await response.json();
+            setPuntos(data.filter(p => p.activo !== false));
         } catch (error) {
             console.error("Error al cargar puntos", error);
         }
-    };
+    }, [api, authFetch]);
 
-    const fetchUsuarios = async () => {
+    const fetchUsuarios = useCallback(async () => {
         try {
-            const response = await fetch(`${api}/usuarios`, {
-                credentials: 'include'
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setUsuarios(data);
-            }
+            const response = await authFetch(`${api}/usuarios`);
+            const data = await response.json();
+            setUsuarios(data);
         } catch (error) {
             console.error("Error al cargar usuarios", error);
         }
-    };
+    }, [api, authFetch]);
 
-    const fetchPlantillas = async () => {
+    const fetchPlantillas = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${api}/api/turnos/obtener`, {
-                credentials: 'include'
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setPlantillas(data);
-            }
+            const response = await authFetch(`${api}/api/turnos/obtener`);
+            const data = await response.json();
+            setPlantillas(data);
         } catch (error) {
             console.error("Error al cargar plantillas", error);
             Swal.fire('Error', 'No se pudieron cargar las plantillas de turnos.', 'error');
         } finally {
             setLoading(false);
         }
-    };
+    }, [api, authFetch]);
 
     useEffect(() => {
         fetchPuntos();
         fetchUsuarios();
         fetchPlantillas();
-    }, []);
+    }, [fetchPuntos, fetchUsuarios, fetchPlantillas]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -98,12 +88,11 @@ const GestionPlantillas = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!nuevaPlantilla.diaSemana || !nuevaPlantilla.horaInicio || !nuevaPlantilla.horaFin || !nuevaPlantilla.punto.id) {
             Swal.fire('Atención', 'Todos los campos son obligatorios.', 'warning');
             return;
         }
-        console.log("Submitting new plantilla:", nuevaPlantilla);
 
         const formatTime = (timeStr) => {
             return timeStr && timeStr.split(':').length === 2 ? `${timeStr}:00` : timeStr;
@@ -126,32 +115,27 @@ const GestionPlantillas = () => {
         }
 
         try {
-            const response = await fetch(`${api}/api/turnos/crear`, {
+            await authFetch(`${api}/api/turnos/crear`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
                 body: JSON.stringify(payload)
             });
 
-            if (response.ok) {
-                Swal.fire('¡Éxito!', 'La plantilla se ha agregado correctamente.', 'success');
-                setNuevaPlantilla({ 
-                    diaSemana: 'MONDAY', 
-                    horaInicio: '', 
-                    horaFin: '', 
-                    punto: { id: '' },
-                    publicador1: { id: '' },
-                    publicador2: { id: '' }
-                });
-                fetchPlantillas();
-            } else {
-                Swal.fire('Error', 'No se pudo crear la plantilla.', 'error');
-            }
+            Swal.fire('¡Éxito!', 'La plantilla se ha agregado correctamente.', 'success');
+            setNuevaPlantilla({
+                diaSemana: 'MONDAY',
+                horaInicio: '',
+                horaFin: '',
+                punto: { id: '' },
+                publicador1: { id: '' },
+                publicador2: { id: '' }
+            });
+            fetchPlantillas();
         } catch (error) {
             console.error("Error al crear plantilla", error);
-            Swal.fire('Error', 'Problema de red al crear la plantilla.', 'error');
+            const msg = error.message?.includes('403')
+                ? 'No tenés permisos para crear plantillas.'
+                : 'No se pudo crear la plantilla.';
+            Swal.fire('Error', msg, 'error');
         }
     };
 
@@ -169,20 +153,18 @@ const GestionPlantillas = () => {
 
         if (result.isConfirmed) {
             try {
-                const response = await fetch(`${api}/api/turnos/eliminar/${id}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
+                await authFetch(`${api}/api/turnos/eliminar/${id}`, {
+                    method: 'DELETE'
                 });
 
-                if (response.ok) {
-                    Swal.fire('¡Eliminado!', 'La plantilla ha sido eliminada.', 'success');
-                    fetchPlantillas();
-                } else {
-                    Swal.fire('Error', 'No se pudo eliminar la plantilla.', 'error');
-                }
+                Swal.fire('¡Eliminado!', 'La plantilla ha sido eliminada.', 'success');
+                fetchPlantillas();
             } catch (error) {
                 console.error("Error al eliminar plantilla", error);
-                Swal.fire('Error', 'Problema de red al eliminar la plantilla.', 'error');
+                const msg = error.message?.includes('403')
+                    ? 'No tenés permisos para eliminar plantillas.'
+                    : 'No se pudo eliminar la plantilla.';
+                Swal.fire('Error', msg, 'error');
             }
         }
     };
@@ -199,7 +181,7 @@ const GestionPlantillas = () => {
         };
         const dayDiff = (dayOrder[a.diaSemana] || 0) - (dayOrder[b.diaSemana] || 0);
         if (dayDiff !== 0) return dayDiff;
-        
+
         const timeA = a.horaInicio || '00:00';
         const timeB = b.horaInicio || '00:00';
         return timeA.localeCompare(timeB);
