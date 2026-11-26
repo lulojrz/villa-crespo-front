@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }) => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ usuario: cleanUser, contrasena: cleanPassword })
+                body: JSON.stringify({ username: cleanUser, password: cleanPassword })
             });
 
             if (!res.ok) {
