@@ -26,7 +26,7 @@ import {
 } from '../utils/permisos'
 
 const Admin = () => {
-  const { numeros } = useContext(NumerosContext)
+  const { numeros, authFetch } = useContext(NumerosContext)
   const numerosContestados = numeros.filter(numero => numero.contesta);
   const [clickeditar, setClickeditar] = useState(false)
   const [clickagregar, setClickagregar] = useState(false)
@@ -56,28 +56,24 @@ const Admin = () => {
   useEffect(() => {
     const fetchPrivilegio = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/usuarios`, {
-          credentials: 'include'
-        });
-        if (response.ok) {
-          const data = await response.json();
-          const loggedInUsername = localStorage.getItem('usuario');
-          const currentUser = data.find(u => u.usuario === loggedInUsername);
-          if (currentUser) {
-            const nuevoPriv = normalizarRol(currentUser.privilegio);
-            const nuevaAsig = currentUser.asignacion || '';
-            localStorage.setItem('asignacion', nuevaAsig);
-            localStorage.setItem('privilegio', nuevoPriv);
-            setPrivilegio(nuevoPriv);
-            setAsignacion(nuevaAsig);
-          }
+        const response = await authFetch(`${import.meta.env.VITE_API_URL}/usuarios`);
+        const data = await response.json();
+        const loggedInUsername = localStorage.getItem('usuario');
+        const currentUser = data.find(u => u.usuario === loggedInUsername);
+        if (currentUser) {
+          const nuevoPriv = normalizarRol(currentUser.privilegio);
+          const nuevaAsig = currentUser.asignacion || '';
+          localStorage.setItem('asignacion', nuevaAsig);
+          localStorage.setItem('privilegio', nuevoPriv);
+          setPrivilegio(nuevoPriv);
+          setAsignacion(nuevaAsig);
         }
       } catch (error) {
         console.error("Error al refrescar datos del usuario:", error);
       }
     };
     fetchPrivilegio();
-  }, []);
+  }, [authFetch]);
 
   return (
     <div className='container my-5'> 
@@ -192,7 +188,7 @@ const Admin = () => {
                         {isTelefonicaAdmin && (
                             <button 
                                 className={`btn flex-fill fw-semibold ${clickPorEliminar ? 'btn-danger text-white' : 'btn-outline-danger'}`}
-                                onClick={() => { setClickPorEliminar(true); setClickeditar(false); setClickagregar(false); setClickPorEliminar(false); setClickReservas(false); }}
+                                onClick={() => { setClickPorEliminar(true); setClickeditar(false); setClickagregar(false); setClickllamados(false); setClickReservas(false); }}
                             >
                                 Por Eliminar
                             </button>
