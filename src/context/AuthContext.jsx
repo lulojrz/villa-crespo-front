@@ -1,10 +1,23 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router'
 import { NumerosContext } from './NumerosContext.jsx'
 import Swal from 'sweetalert2'
 import { normalizarRol } from '../utils/permisos'
 
 export const AuthContext = createContext()
+
+// Verifica si el JWT existe y su campo "exp" aún no venció
+const isTokenValid = (token) => {
+    if (!token) return false;
+    try {
+        const payloadBase64 = token.split('.')[1];
+        const payload = JSON.parse(atob(payloadBase64));
+        if (!payload.exp) return true;
+        return payload.exp * 1000 > Date.now();
+    } catch {
+        return false;
+    }
+};
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState('')
@@ -15,15 +28,31 @@ export const AuthProvider = ({ children }) => {
     const [errors, setErrors] = useState({})
     const [isDoorOpening, setIsDoorOpening] = useState(false)
 
+    const logout = useCallback(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('isAuth');
+        localStorage.removeItem('usuario');
+        localStorage.removeItem('usuarioId');
+        localStorage.removeItem('asignacion');
+        localStorage.removeItem('privilegio');
+        localStorage.removeItem('grupo_servicio');
+        localStorage.removeItem('habilitacionPublica');
+        setIsAuth(false);
+        navigate('/login');
+    }, [navigate, setIsAuth]);
+
     useEffect(() => {
-        const isAuthenticated = localStorage.getItem('isAuth') === 'true'
-        if (isAuthenticated) {
-            setIsAuth(true)
+        const token = localStorage.getItem('token');
+        if (isTokenValid(token)) {
+            setIsAuth(true);
             if (window.location.pathname === '/login') {
-                navigate("/")
+                navigate('/');
             }
+        } else if (token || localStorage.getItem('isAuth') === 'true') {
+            // Si había un token vencido o sesión vieja, limpiamos todo
+            logout();
         }
-    }, [navigate, setIsAuth])
+    }, [navigate, setIsAuth, logout]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -44,12 +73,11 @@ export const AuthProvider = ({ children }) => {
         setErrors({});
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/usuarios/login`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                credentials: 'include',
                 body: JSON.stringify({ usuario: cleanUser, contrasena: cleanPassword })
             });
 
@@ -60,6 +88,16 @@ export const AuthProvider = ({ children }) => {
                         'El servidor está despertando. Por favor, reintentá en 10 segundos.',
                         'info'
                     );
+                    return;
+                }
+
+                if (res.status === 401 || res.status === 403) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Acceso denegado',
+                        text: 'Usuario o contraseña incorrectos.',
+                        confirmButtonColor: 'var(--bs-primary)'
+                    });
                     return;
                 }
 
@@ -75,12 +113,13 @@ export const AuthProvider = ({ children }) => {
 
             const responseData = await res.json();
 
-            // As we return the user object, it should have the 'usuario' field if successful
-            if (responseData && responseData.usuario) {
+            if (responseData && responseData.token && responseData.usuario) {
                 setErrors({});
                 setIsAuth(true);
+                localStorage.setItem('token', responseData.token);
                 localStorage.setItem('isAuth', 'true');
                 localStorage.setItem('usuario', responseData.usuario);
+
                 if (responseData.id) {
                     localStorage.setItem('usuarioId', responseData.id);
                 } else {
@@ -89,7 +128,7 @@ export const AuthProvider = ({ children }) => {
 
                 localStorage.setItem('asignacion', responseData.asignacion || '');
                 localStorage.setItem('privilegio', normalizarRol(responseData.privilegio));
-                localStorage.setItem('grupo_servicio', responseData.grupo_servicio || responseData.grupo || '');
+                localStorage.setItem('grupo_servicio', responseData.grupo_servicio ?? responseData.grupo ?? '');
                 localStorage.setItem(
                     'habilitacionPublica',
                     String(responseData.habilitacionPublica === true || responseData.habilitacionPublica === 'true')
@@ -105,10 +144,9 @@ export const AuthProvider = ({ children }) => {
 
         } catch (err) {
             console.error("Error crítico en el login:", err);
-            // Si la API estaba dormida o tira error de red
             Swal.fire(
-                'Servidor iniciando', 
-                'El servidor está despertando. Por favor, reintentá en 10 segundos.', 
+                'Servidor iniciando',
+                'El servidor está despertando. Por favor, reintentá en 10 segundos.',
                 'info'
             );
         } finally {
@@ -118,12 +156,13 @@ export const AuthProvider = ({ children }) => {
 
     return (
         <AuthContext.Provider value={{
-            user, setUser, 
+            user, setUser,
             password, setPassword,
             errors, setErrors,
             isLoading,
             isDoorOpening,
-            handleSubmit
+            handleSubmit,
+            logout
         }}>
             {children}
         </AuthContext.Provider>
